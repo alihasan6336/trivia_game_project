@@ -44,15 +44,17 @@ def create_app(test_config=None):
   @app.route('/categories')
   def get_all_categories():
     categories = Category.query.order_by(Category.id).all()
-    categories_list = [category.format() for category in categories]
+    categories_dict = {}
+    for category in categories:
+      categories_dict[category.id] = category.type
 
-    if (len(categories_list) == 0):
+    if (len(categories) == 0):
       abort(404)
 
     return jsonify({
       'success': True,
-      'categories': categories_list,
-      'total_categories': len(categories_list)
+      'categories': categories_dict,
+      'total_categories': len(categories)
     })
 
   '''
@@ -73,7 +75,9 @@ def create_app(test_config=None):
     current_questions = paginate_questions(request, all_questions)
 
     categories = Category.query.order_by(Category.id).all()
-    categories_list = [category.format() for category in categories]
+    categories_dict = {}
+    for category in categories:
+      categories_dict[category.id] = category.type
 
     if len(current_questions) == 0:
       abort(404)
@@ -82,7 +86,7 @@ def create_app(test_config=None):
       'success': True,
       'questions': current_questions,
       'total_questions': len(all_questions),
-      "categories": categories_list,
+      "categories": categories_dict,
       "total_categories": len(categories)
     })
 
@@ -99,7 +103,7 @@ def create_app(test_config=None):
     target_question = Question.query.filter(Question.id == question_id).one_or_none()
 
     if target_question is None:
-      abort(404)
+      abort(422)
 
     try:
       target_question.delete()
@@ -130,27 +134,43 @@ def create_app(test_config=None):
   def create_question():
     body = request.get_json()
 
-    if (body.get('question') is None or body.get('answer') is None or 
-        body.get('category') is None or body.get('difficulty') is None):
-      abort(422)
-    
-    try:
-      question = Question(question=body.get('question'), answer=body.get('answer'), category=body.get('category'), difficulty=body.get('difficulty'))
-      question.insert()
+    if body and 'searchTerm' in body:
+      search_result = Question.query.filter(Question.question.ilike(body.get('searchTerm'))).all()
 
-      questions = Question.query.order_by(Question.id).all()
-      current_questions = paginate_questions(request, questions)
+      if not search_result:
+        abort(404)
+
+      current_questions = paginate_questions(request, search_result)
 
       return jsonify({
-        'success': True,
-        'created_id': question.id,
-        'created_question': question.question,
-        'questions': current_questions,
-        'total_questions': len(questions)
+        "success": True,
+        "questions": current_questions,
+        "total_questions": len(Question.query.all())
       })
 
-    except: 
-      abort(422)
+    else:
+
+      if not body or (body.get('question') is None or body.get('answer') is None or 
+          body.get('category') is None or body.get('difficulty') is None):
+        abort(422)
+      
+      try:
+        question = Question(question=body.get('question'), answer=body.get('answer'), category=body.get('category'), difficulty=body.get('difficulty'))
+        question.insert()
+
+        questions = Question.query.order_by(Question.id).all()
+        current_questions = paginate_questions(request, questions)
+
+        return jsonify({
+          'success': True,
+          'created_id': question.id,
+          'created_question': question.question,
+          'questions': current_questions,
+          'total_questions': len(questions)
+        })
+
+      except: 
+        abort(422)
 
   '''
   @TODO: 
@@ -162,20 +182,20 @@ def create_app(test_config=None):
   only question that include that string within their question. 
   Try using the word "title" to start. 
   '''
-  @app.route('/questions/search/<string:question>', methods=['POST'])
-  def search_in_questions(question):
-    search_result = Question.query.filter(Question.question.ilike(question)).all()
+  # @app.route('/questions/search/<string:question>', methods=['POST'])
+  # def search_in_questions(question):
+  #   search_result = Question.query.filter(Question.question.ilike(question)).all()
 
-    if not search_result:
-      abort(404)
+  #   if not search_result:
+  #     abort(404)
 
-    current_questions = paginate_questions(request, search_result)
+  #   current_questions = paginate_questions(request, search_result)
 
-    return jsonify({
-      "success": True,
-      "questions": current_questions,
-      "total_questions": len(Question.query.all())
-    })
+  #   return jsonify({
+  #     "success": True,
+  #     "questions": current_questions,
+  #     "total_questions": len(Question.query.all())
+  #   })
 
   '''
   @TODO: 
@@ -202,7 +222,7 @@ def create_app(test_config=None):
     return jsonify({
       "success": True,
       "category_id": category.id,
-      "category_tyoe": category.type,
+      "category_type": category.type,
       "questions": current_questions,
       "total_questions": len(Question.query.all())
     })
@@ -221,20 +241,20 @@ def create_app(test_config=None):
   and shown whether they were correct or not.
   '''
   @app.route('/quizzes', methods=['POST'])
-  def quiz():
+  def quizzes():
+    body = request.get_json()
+
+    if not body or'quiz_category' not in body or 'previous_questions' not in body:
+      abort(400)
+
     try:
-      body = request.get_json()
-
-      if 'quiz_category' not in body or 'previous_questions' not in body:
-        abort(400)
-
       category = body.get('quiz_category')
       previous_questions = body.get('previous_questions')
 
       if category['type'] == 'click':
         questions = Question.query.filter(Question.id.notin_((previous_questions))).all()
       else:
-        questions = Question.query.filter_by(category=category['id']).filter(Question.id.notin_((previous_questions))).all()
+        questions = Question.query.filter_by(category=category['type']).filter(Question.id.notin_((previous_questions))).all()
 
       questions_len = len(questions)
       random_index = random.randrange(0, questions_len)

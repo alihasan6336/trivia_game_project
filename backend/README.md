@@ -89,6 +89,175 @@ GET '/categories'
 
 ```
 
+GET '\questions?page=<page_number>' 'page_number' should be int.
+- Get pagenated questions 
+- Example on curl http://127.0.0.1:5000/questions?page=1:
+```
+ {
+    "success": true, 
+    "questions": [
+        {
+        "answer": "answer1", 
+        "category": "category1", 
+        "difficulty": 1, 
+        "id": 1, 
+        "question": "question1"
+        },
+        {
+        "answer": "answer2", 
+        "category": "category2", 
+        "difficulty": 2, 
+        "id": 2, 
+        "question": "question2"
+        }, 
+        {
+        "answer": "answer3", 
+        "category": "category3", 
+        "difficulty": 3, 
+        "id": 3, 
+        "question": "question3"
+        } 
+    ],
+    "total_questions": 3,
+    "categories": {
+        "1": "category1", 
+        "2": "category2", 
+        "3": "category3", 
+        "4": "category4", 
+    },
+    "total_categories": 4
+}
+```
+
+DELETE '/questions/<question_id>' 'question_id' should be int.
+- Delete question with specific id.
+- Example on curl -X DELETE http://127.0.0.1:5000/questions/1:
+```
+{
+    "success": True,
+    "deleted_id": 1,
+    "questions": [
+        {
+        "answer": "answer2", 
+        "category": "category2", 
+        "difficulty": 2, 
+        "id": 2, 
+        "question": "question2"
+        }, 
+        {
+        "answer": "answer3", 
+        "category": "category3", 
+        "difficulty": 3, 
+        "id": 3, 
+        "question": "question3"
+        } 
+    ],
+    "total_questions": 2
+}
+```
+
+POST '/questions'
+- Post a new question.
+- Example on curl -X POST http://127.0.0.1:5000/questions with body{question:'question4', answer:'answer4', difficulty:1, category:'category4'}:
+```
+{
+    'success': True,
+    'created_id': 4,
+    'created_question': 'question4',
+    'questions': [
+        {
+        "answer": "answer2", 
+        "category": "category2", 
+        "difficulty": 2, 
+        "id": 2, 
+        "question": "question2"
+        }, 
+        {
+        "answer": "answer3", 
+        "category": "category3", 
+        "difficulty": 3, 
+        "id": 3, 
+        "question": "question3"
+        },
+        {
+        "answer": "answer4", 
+        "category": "category4", 
+        "difficulty": 1, 
+        "id": 4, 
+        "question": "question4"
+        } 
+    ],
+    'total_questions': 3
+}
+```
+POST '/questions'
+- Post in '/questions' to search in questions.
+- Example on curl -X POST http://127.0.0.1:5000/questions with body{searchTerm:'question4'}:
+```
+{
+    "success": True,
+    "questions": [
+        {
+        "answer": "answer4", 
+        "category": "category4", 
+        "difficulty": 1, 
+        "id": 4, 
+        "question": "question4"
+        }
+    ],
+    "total_questions": 3
+}
+```
+
+GET '/categories/<int:category_id>/questions'
+- Get questions by category.
+- Example on curl http://127.0.0.1:5000/categories/1/questions:
+```
+{
+    "success": True,
+    "category_id": 1,
+    "category_type": 'category1',
+    "questions": 
+        {
+        "answer": "answer2", 
+        "category": "category2", 
+        "difficulty": 2, 
+        "id": 2, 
+        "question": "question2"
+        }, 
+        {
+        "answer": "answer3", 
+        "category": "category3", 
+        "difficulty": 3, 
+        "id": 3, 
+        "question": "question3"
+        },
+        {
+        "answer": "answer4", 
+        "category": "category4", 
+        "difficulty": 1, 
+        "id": 4, 
+        "question": "question4"
+        } 
+    ],
+    "total_questions": 3
+}
+```
+POST '/quizzes'
+- Post on '/quizzes' to play questions.
+- Example on curl http://127.0.0.1:5000/quizzes with body={previous_questions: 'puestion2', quiz_category: {id:2, type:'category2'}}: 
+```
+{
+    'success': True,
+    'question': {
+        "answer": "answer4", 
+        "category": "category4", 
+        "difficulty": 1, 
+        "id": 4, 
+        "question": "question4"
+    }
+}
+```
 
 ## Testing
 To run the tests, run
