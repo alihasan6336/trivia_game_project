@@ -132,21 +132,50 @@ def create_app(test_config=None):
   '''
   @app.route('/questions', methods=['POST'])
   def create_question():
+    # body = request.get_json()
+
+    # if body and 'searchTerm' in body:
+    #   search_result = Question.query.filter(Question.question.ilike(body.get('searchTerm'))).all()
+
+    #   if not search_result:
+    #     abort(404)
+
+    #   current_questions = paginate_questions(request, search_result)
+
+    #   return jsonify({
+    #     "success": True,
+    #     "questions": current_questions,
+    #     "total_questions": len(Question.query.all())
+    #   })
+
     body = request.get_json()
+    search_term = body.get('searchTerm', '')
 
-    if body and 'searchTerm' in body:
-      search_result = Question.query.filter(Question.question.ilike(body.get('searchTerm'))).all()
+    # if empty return 400 bad request
+    if search_term == '':
+      abort(400)
 
-      if not search_result:
-        abort(404)
+    try:
+      questions = Question.query.filter(Question.question.ilike(f'%{search_term}%')).all()
 
-      current_questions = paginate_questions(request, search_result)
+      # if there are no questions for search term return 404
+      if len(questions) == 0:
+          abort(404)
 
+      # paginate questions
+      paginated_questions = paginate_questions(request, questions)
+
+      # return response if successful
       return jsonify({
-        "success": True,
-        "questions": current_questions,
-        "total_questions": len(Question.query.all())
-      })
+          'success': True,
+          'questions': paginated_questions,
+          'total_questions': len(Question.query.all())
+      }), 200
+
+    except Exception:
+        # This error code is returned when 404 abort
+        # raises exception from try block
+        abort(404)
 
     else:
 
@@ -212,7 +241,7 @@ def create_app(test_config=None):
     if category is None:
       abort(404)
     
-    questions = Question.query.filter(Question.category == category.type)
+    questions = Question.query.filter(Question.category == category_id).all()
 
     if questions is None:
       abort(404)
@@ -221,8 +250,7 @@ def create_app(test_config=None):
 
     return jsonify({
       "success": True,
-      "category_id": category.id,
-      "category_type": category.type,
+      "current_category": category.type,
       "questions": current_questions,
       "total_questions": len(Question.query.all())
     })
@@ -254,7 +282,7 @@ def create_app(test_config=None):
       if category['type'] == 'click':
         questions = Question.query.filter(Question.id.notin_((previous_questions))).all()
       else:
-        questions = Question.query.filter_by(category=category['type']).filter(Question.id.notin_((previous_questions))).all()
+        questions = Question.query.filter_by(category=category['id']).filter(Question.id.notin_((previous_questions))).all()
 
       questions_len = len(questions)
       random_index = random.randrange(0, questions_len)
