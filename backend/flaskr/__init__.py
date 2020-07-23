@@ -8,6 +8,7 @@ from models import setup_db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
 
+
 def paginate_questions(request, selection):
     page = request.args.get('page', 1, type=int)
     start = (page - 1) * QUESTIONS_PER_PAGE
@@ -18,7 +19,9 @@ def paginate_questions(request, selection):
 
     return current_questions
 
+
 def create_app(test_config=None):
+
   # create and configure the app
   app = Flask(__name__)
   setup_db(app)
@@ -37,7 +40,7 @@ def create_app(test_config=None):
     return response
 
   '''
-  @TODO: 
+  @TODO:
   Create an endpoint to handle GET requests 
   for all available categories.
   '''
@@ -119,7 +122,6 @@ def create_app(test_config=None):
     except:
       abort(422)
 
-
   '''
   @TODO: 
   Create an endpoint to POST a new question, 
@@ -132,55 +134,34 @@ def create_app(test_config=None):
   '''
   @app.route('/questions', methods=['POST'])
   def create_question():
-    # body = request.get_json()
-
-    # if body and 'searchTerm' in body:
-    #   search_result = Question.query.filter(Question.question.ilike(body.get('searchTerm'))).all()
-
-    #   if not search_result:
-    #     abort(404)
-
-    #   current_questions = paginate_questions(request, search_result)
-
-    #   return jsonify({
-    #     "success": True,
-    #     "questions": current_questions,
-    #     "total_questions": len(Question.query.all())
-    #   })
-
     body = request.get_json()
-    search_term = body.get('searchTerm', '')
 
-    # if empty return 400 bad request
-    if search_term == '':
-      abort(400)
+    if body and 'searchTerm' in body:
+      search_term = body.get('searchTerm', '')
 
-    try:
-      questions = Question.query.filter(Question.question.ilike(f'%{search_term}%')).all()
+      if search_term == '':
+        abort(400)
 
-      # if there are no questions for search term return 404
-      if len(questions) == 0:
+      try:
+        search_results = Question.query.filter(Question.question.ilike(f'%{search_term}%')).all()
+
+        if len(search_results) == 0:
+            abort(404)
+
+        paginated_questions = paginate_questions(request, search_results)
+
+        return jsonify({
+            'success': True,
+            'questions': paginated_questions,
+            'total_questions': len(Question.query.all())
+        })
+
+      except:
           abort(404)
 
-      # paginate questions
-      paginated_questions = paginate_questions(request, questions)
-
-      # return response if successful
-      return jsonify({
-          'success': True,
-          'questions': paginated_questions,
-          'total_questions': len(Question.query.all())
-      }), 200
-
-    except Exception:
-        # This error code is returned when 404 abort
-        # raises exception from try block
-        abort(404)
-
     else:
-
       if not body or (body.get('question') is None or body.get('answer') is None or 
-          body.get('category') is None or body.get('difficulty') is None):
+                        body.get('category') is None or body.get('difficulty') is None):
         abort(422)
       
       try:
@@ -211,20 +192,7 @@ def create_app(test_config=None):
   only question that include that string within their question. 
   Try using the word "title" to start. 
   '''
-  # @app.route('/questions/search/<string:question>', methods=['POST'])
-  # def search_in_questions(question):
-  #   search_result = Question.query.filter(Question.question.ilike(question)).all()
-
-  #   if not search_result:
-  #     abort(404)
-
-  #   current_questions = paginate_questions(request, search_result)
-
-  #   return jsonify({
-  #     "success": True,
-  #     "questions": current_questions,
-  #     "total_questions": len(Question.query.all())
-  #   })
+  # Post '/questions' with searchTerm in json body.
 
   '''
   @TODO: 
@@ -254,7 +222,6 @@ def create_app(test_config=None):
       "questions": current_questions,
       "total_questions": len(Question.query.all())
     })
-
 
 
   '''
@@ -324,7 +291,13 @@ def create_app(test_config=None):
       "error": 400,
       "message": "bad request"
     }), 400
+
+  @app.errorhandler(500)
+  def internal_server_error(error):
+    return jsonify({
+      "success": False,
+      "error": 500,
+      "message": "internal server error"
+    }), 500
   
   return app
-
-    

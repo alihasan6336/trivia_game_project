@@ -14,7 +14,7 @@ class TriviaTestCase(unittest.TestCase):
         """Define test variables and initialize app."""
         self.app = create_app()
         self.client = self.app.test_client
-        self.database_name = "trivia_test"
+        self.database_name = "trivia1"
         self.database_path = "postgres://{}/{}".format('postgres:P01019056637p@localhost:5432', self.database_name)
         setup_db(self.app, self.database_path)
 
@@ -64,7 +64,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(json_data['message'], 'resource not found')
 
     def test_delete_question(self):
-        question = Question(question='question', answer='answer', category='category', difficulty=1)
+        question = Question(question='question', answer='answer', category=1, difficulty=1)
         question.insert()
         question_id = question.id
 
@@ -94,7 +94,7 @@ class TriviaTestCase(unittest.TestCase):
         question_fields = {
             'question': 'question1',
             'answer': 'answer1',
-            'category': 'category1',
+            'category': 1,
             'difficulty': 1,
         }
 
@@ -150,8 +150,7 @@ class TriviaTestCase(unittest.TestCase):
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(json_data['success'], True)
-        self.assertEqual(json_data['category_id'], category.id)
-        self.assertEqual(json_data['category_type'], category.type)
+        self.assertEqual(json_data['current_category'], category.type)
         self.assertTrue(len(json_data['questions']))
         self.assertTrue(json_data['total_questions'])
 
@@ -168,9 +167,9 @@ class TriviaTestCase(unittest.TestCase):
     def test_post_quizzes(self):
         requested_data = {
             'quiz_category': {
-                'id': 15,
-                'type': 'category1'
-            }, 'previous_questions': [3, 4, 5]
+                'id': 5,
+                'type': 'Entertainment'
+            }, 'previous_questions': [10, 11]
         }
 
         res = self.client().post('/quizzes', json=requested_data)
@@ -201,7 +200,7 @@ class TriviaTestCase(unittest.TestCase):
             'quiz_category': {
                 'id': 15,
                 'type': '5'
-            }, 'previous_questions': [3, 4, 5]
+            }, 'previous_questions': [10, 11]
         }
 
         res = self.client().post('/quizzes', json=requested_data)
