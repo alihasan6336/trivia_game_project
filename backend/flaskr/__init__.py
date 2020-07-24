@@ -6,6 +6,8 @@ import random
 
 from models import setup_db, Question, Category
 
+import sys
+
 QUESTIONS_PER_PAGE = 10
 
 
@@ -165,7 +167,8 @@ def create_app(test_config=None):
         abort(422)
       
       try:
-        question = Question(question=body.get('question'), answer=body.get('answer'), category=body.get('category'), difficulty=body.get('difficulty'))
+        question = Question(question=body.get('question'), answer=body.get('answer'),
+         category=body.get('category'), difficulty=body.get('difficulty'))
         question.insert()
 
         questions = Question.query.order_by(Question.id).all()
@@ -249,10 +252,13 @@ def create_app(test_config=None):
       if category['type'] == 'click':
         questions = Question.query.filter(Question.id.notin_((previous_questions))).all()
       else:
-        questions = Question.query.filter_by(category=category['id']).filter(Question.id.notin_((previous_questions))).all()
+        questions = Question.query.filter_by(category=category['id']).filter(
+          Question.id.notin_(previous_questions)).all()
 
       questions_len = len(questions)
-      random_index = random.randrange(0, questions_len)
+      
+      if questions_len != 0:
+        random_index = random.randrange(0, questions_len)
       
       new_question = questions[random_index].format() if questions_len > 0 else None
 
@@ -260,7 +266,8 @@ def create_app(test_config=None):
         'success': True,
         'question': new_question
       })
-    except:
+    except Exception as e:
+      print(e)
       abort(422)
 
   '''
